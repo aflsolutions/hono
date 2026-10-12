@@ -1,7 +1,7 @@
 import { pipeline } from 'node:stream/promises'
 import type { Hono } from '../../hono'
 import type { Env, Schema } from '../../types'
-import { decodeBase64, encodeBase64 } from '../../utils/encode'
+import { base64Decode, base64Encode } from '../../utils/encode'
 import type {
   ALBRequestContext,
   ApiGatewayRequestContext,
@@ -361,7 +361,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
 
     if (event.body) {
       const body = event.isBase64Encoded
-        ? decodeBase64(event.body)
+        ? base64Decode(event.body)
         : new TextEncoder().encode(event.body)
       requestInit.body = body
       headers.set('content-length', body.length.toString())
@@ -385,7 +385,7 @@ export abstract class EventProcessor<E extends LambdaEvent> {
       isBase64Encoded = isContentEncodingBinary(contentEncoding)
     }
 
-    const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+    const body = isBase64Encoded ? base64Encode(await res.arrayBuffer()) : await res.text()
 
     const result: APIGatewayProxyResult = {
       body: body,

@@ -1,4 +1,4 @@
-import { decodeBase64Url, encodeBase64Url } from './encode'
+import { base64Decode, base64Encode, base64UrlDecode, base64UrlEncode } from './encode'
 
 const toURLBase64 = (base64String: string): string =>
   base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' })[m] ?? m)
@@ -47,15 +47,30 @@ describe('base64', () => {
     [str2UInt8Array('asure.'), 'YXN1cmUu'],
     [str2UInt8Array('sure.'), 'c3VyZS4='],
   ])('%s, %s', (stdDecoded, stdEncoded) => {
+    it('encode standard base64', () => {
+      expect(base64Encode(stdDecoded.buffer)).toStrictEqual(stdEncoded)
+    })
+    it('decode standard base64', () => {
+      expect(base64Decode(stdEncoded)).toStrictEqual(stdDecoded)
+    })
     it('encode', () => {
-      const got = encodeBase64Url(stdDecoded.buffer)
+      const got = base64UrlEncode(stdDecoded.buffer)
       const want = toURLBase64(stdEncoded)
       expect(got).toStrictEqual(want)
     })
     it('decode', () => {
-      const got = decodeBase64Url(toURLBase64(stdEncoded))
+      const got = base64UrlDecode(toURLBase64(stdEncoded))
       const want = stdDecoded
       expect(got).toStrictEqual(want)
+    })
+    it('encode without padding', () => {
+      const got = base64UrlEncode(stdDecoded.buffer, false)
+      const want = toURLBase64(stdEncoded).replace(/=+$/, '')
+      expect(got).toStrictEqual(want)
+    })
+    it('decode without padding', () => {
+      const got = base64UrlDecode(toURLBase64(stdEncoded).replace(/=+$/, ''))
+      expect(got).toStrictEqual(stdDecoded)
     })
   })
 })

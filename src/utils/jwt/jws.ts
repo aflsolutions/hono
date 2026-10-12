@@ -5,7 +5,7 @@
  */
 
 import { getRuntimeKey } from '../../helper/adapter'
-import { decodeBase64 } from '../encode'
+import { base64Decode } from '../encode'
 import type { SignatureAlgorithm } from './jwa'
 import { CryptoKeyUsage, JwtAlgorithmNotImplemented } from './types'
 import { utf8Encoder } from './utf8'
@@ -48,7 +48,7 @@ export async function verifying(
 }
 
 function pemToBinary(pem: string): Uint8Array<ArrayBuffer> {
-  return decodeBase64(pem.replace(/-+(BEGIN|END).*?-+/g, '').replace(/\s/g, ''))
+  return base64Decode(pem.replace(/-+(BEGIN|END).*?-+/g, '').replace(/\s/g, ''))
 }
 
 async function importPrivateKey(key: SignatureKey, alg: KeyImporterAlgorithm): Promise<CryptoKey> {

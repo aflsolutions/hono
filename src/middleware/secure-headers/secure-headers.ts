@@ -5,7 +5,7 @@
 
 import type { Context } from '../../context'
 import type { MiddlewareHandler } from '../../types'
-import { encodeBase64 } from '../../utils/encode'
+import { base64Encode } from '../../utils/encode'
 import type { PermissionsPolicyDirective } from './permissions-policy'
 
 export type SecureHeadersVariables = {
@@ -131,7 +131,7 @@ type SecureHeadersCallback = (
 const generateNonce = () => {
   const arrayBuffer = new Uint8Array(16)
   crypto.getRandomValues(arrayBuffer)
-  return encodeBase64(arrayBuffer.buffer)
+  return base64Encode(arrayBuffer.buffer)
 }
 
 export const NONCE: ContentSecurityPolicyOptionHandler = (ctx) => {
