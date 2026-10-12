@@ -1,21 +1,25 @@
-import { decodeBase64 } from './encode'
+import { parseAuthorization, TOKEN68_REGEXP } from './authorization'
+import { base64Decode } from './encode'
 
-const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
 const USER_PASS_REGEXP = /^([^:]*):(.*)$/
 const utf8Decoder = new TextDecoder()
 
 export type Auth = (req: Request) => { username: string; password: string } | undefined
 
 export const auth: Auth = (req: Request) => {
-  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
-  if (!match) {
+  const authorization = parseAuthorization(req.headers.get('Authorization'), { separator: / +/ })
+  if (
+    !authorization ||
+    authorization.scheme.toLowerCase() !== 'basic' ||
+    !TOKEN68_REGEXP.test(authorization.credentials)
+  ) {
     return undefined
   }
 
   let userPass = undefined
   // If an invalid string is passed to atob(), it throws a `DOMException`.
   try {
-    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
+    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(base64Decode(authorization.credentials)))
   } catch {} // Do nothing
 
   if (!userPass) {

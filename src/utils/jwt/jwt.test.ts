@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { vi } from 'vitest'
-import { encodeBase64, encodeBase64Url } from '../encode'
+import { base64Encode, base64UrlEncode } from '../encode'
 import { AlgorithmTypes } from './jwa'
 import type { HonoJsonWebKey } from './jws'
 import { signing } from './jws'
@@ -146,7 +146,7 @@ describe('JWT', () => {
     it('rejects token with nbf = Infinity (parsed from 1e400 in JSON)', async () => {
       // JSON.stringify converts Infinity to null, so hand-craft the payload.
       const secret = 'a-secret'
-      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encode = (s: string) => base64UrlEncode(utf8Encoder.encode(s).buffer, false)
       const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
       const encodedPayload = encode('{"message":"hello","nbf":1e400}')
       const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -155,7 +155,7 @@ describe('JWT', () => {
         AlgorithmTypes.HS256,
         utf8Encoder.encode(signingInput)
       )
-      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+      const tok = `${signingInput}.${base64UrlEncode(signatureBuffer, false)}`
 
       let err
       let authorized
@@ -245,7 +245,7 @@ describe('JWT', () => {
     it('rejects token with exp = Infinity (parsed from 1e400 in JSON)', async () => {
       // JSON.stringify converts Infinity to null, so hand-craft the payload.
       const secret = 'a-secret'
-      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encode = (s: string) => base64UrlEncode(utf8Encoder.encode(s).buffer, false)
       const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
       const encodedPayload = encode('{"message":"hello","exp":1e400}')
       const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -254,7 +254,7 @@ describe('JWT', () => {
         AlgorithmTypes.HS256,
         utf8Encoder.encode(signingInput)
       )
-      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+      const tok = `${signingInput}.${base64UrlEncode(signatureBuffer, false)}`
 
       let err
       let authorized
@@ -320,7 +320,7 @@ describe('JWT', () => {
       vi.useFakeTimers().setSystemTime(new Date(now * 1000))
 
       const secret = 'a-secret'
-      const encode = (s: string) => encodeBase64Url(utf8Encoder.encode(s).buffer).replace(/=/g, '')
+      const encode = (s: string) => base64UrlEncode(utf8Encoder.encode(s).buffer, false)
       const encodedHeader = encode('{"alg":"HS256","typ":"JWT"}')
       const encodedPayload = encode('{"message":"hello","iat":1e400}')
       const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -329,7 +329,7 @@ describe('JWT', () => {
         AlgorithmTypes.HS256,
         utf8Encoder.encode(signingInput)
       )
-      const tok = `${signingInput}.${encodeBase64Url(signatureBuffer).replace(/=/g, '')}`
+      const tok = `${signingInput}.${base64UrlEncode(signatureBuffer, false)}`
 
       let err
       let authorized
@@ -1057,7 +1057,7 @@ describe('verifyWithJwks header.alg fallback', () => {
 
     // Create JWT (signed with RS256)
     const header = { alg: headerAlg, typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1068,7 +1068,7 @@ describe('verifyWithJwks header.alg fallback', () => {
       headerAlg,
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1099,13 +1099,13 @@ describe('verifyWithJwks security', () => {
 
     // Create JWT (signed with HS256)
     const header = { alg: 'HS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1113,7 +1113,7 @@ describe('verifyWithJwks security', () => {
       {
         kty: 'oct',
         kid,
-        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        k: base64UrlEncode(utf8Encoder.encode(secret).buffer),
         use: 'sig',
         alg: 'HS256',
       },
@@ -1131,13 +1131,13 @@ describe('verifyWithJwks security', () => {
     const kid = 'dummy'
 
     const header = { alg: 'HS384', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS384', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1145,7 +1145,7 @@ describe('verifyWithJwks security', () => {
       {
         kty: 'oct',
         kid,
-        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        k: base64UrlEncode(utf8Encoder.encode(secret).buffer),
         use: 'sig',
         alg: 'HS384',
       },
@@ -1163,13 +1163,13 @@ describe('verifyWithJwks security', () => {
     const kid = 'dummy'
 
     const header = { alg: 'HS512', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS512', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1177,7 +1177,7 @@ describe('verifyWithJwks security', () => {
       {
         kty: 'oct',
         kid,
-        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        k: base64UrlEncode(utf8Encoder.encode(secret).buffer),
         use: 'sig',
         alg: 'HS512',
       },
@@ -1207,7 +1207,7 @@ describe('verifyWithJwks security', () => {
 
     // Create JWT with RS384 in header (mismatch with RS256 key)
     const header = { alg: 'RS384', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1218,7 +1218,7 @@ describe('verifyWithJwks security', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1255,7 +1255,7 @@ describe('verifyWithJwks security', () => {
     )
 
     const header = { alg: 'RS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1265,7 +1265,7 @@ describe('verifyWithJwks security', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1303,7 +1303,7 @@ describe('verifyWithJwks security', () => {
 
     // Attacker creates a JWT with HS256 in header
     const header = { alg: 'HS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1314,7 +1314,7 @@ describe('verifyWithJwks security', () => {
     // Attacker would sign with the public key bytes as HMAC secret
     // We don't need to actually sign for this test - just verify rejection
     const signatureBuffer = await signing('fake-secret', 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1354,7 +1354,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
 
     // Create JWT with RS256
     const header = { alg: 'RS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1364,7 +1364,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1402,7 +1402,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
 
     // Create JWT with RS256
     const header = { alg: 'RS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1412,7 +1412,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
       'RS256',
       utf8Encoder.encode(signingInput)
     )
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1445,13 +1445,13 @@ describe('verifyWithJwks algorithm whitelist', () => {
 
     // Create JWT with HS256
     const header = { alg: 'HS256', typ: 'JWT', kid }
-    const encode = (obj: object) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+    const encode = (obj: object) => base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
     const encodedHeader = encode(header)
     const encodedPayload = encode(payload)
     const signingInput = `${encodedHeader}.${encodedPayload}`
 
     const signatureBuffer = await signing(secret, 'HS256', utf8Encoder.encode(signingInput))
-    const signature = encodeBase64Url(signatureBuffer)
+    const signature = base64UrlEncode(signatureBuffer)
 
     const token = `${encodedHeader}.${encodedPayload}.${signature}`
 
@@ -1459,7 +1459,7 @@ describe('verifyWithJwks algorithm whitelist', () => {
       {
         kty: 'oct',
         kid,
-        k: encodeBase64Url(utf8Encoder.encode(secret).buffer),
+        k: base64UrlEncode(utf8Encoder.encode(secret).buffer),
         use: 'sig',
         alg: 'HS256',
       },
@@ -1532,13 +1532,13 @@ describe('verifyWithJwks key handling', () => {
 
 async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('pkcs8', key)
-  const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
+  const pem = `-----BEGIN PRIVATE KEY-----\n${base64Encode(exported)}\n-----END PRIVATE KEY-----`
   return pem
 }
 
 async function exportPEMPublicKey(key: CryptoKey): Promise<string> {
   const exported = await crypto.subtle.exportKey('spki', key)
-  const pem = `-----BEGIN PUBLIC KEY-----\n${encodeBase64(exported)}\n-----END PUBLIC KEY-----`
+  const pem = `-----BEGIN PUBLIC KEY-----\n${base64Encode(exported)}\n-----END PUBLIC KEY-----`
   return pem
 }
 

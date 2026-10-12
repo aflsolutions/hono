@@ -4,7 +4,7 @@ import { jwk } from '.'
 import { setSignedCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { HTTPException } from '../../http-exception'
-import { encodeBase64Url } from '../../utils/encode'
+import { base64UrlEncode } from '../../utils/encode'
 import { Jwt } from '../../utils/jwt'
 import type { HonoJsonWebKey } from '../../utils/jwt/jws'
 import { signing } from '../../utils/jwt/jws'
@@ -298,9 +298,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token without header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
-      const encodeSignaturePart = (buf: ArrayBufferLike): string =>
-        encodeBase64Url(buf).replace(/=/g, '')
+        base64UrlEncode(utf8Encoder.encode(JSON.stringify(part)).buffer, false)
       const jwtSignWithoutHeader = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
         const encodedPayload = encodeJwtPart(payload)
         const signaturePart = await signing(
@@ -309,7 +307,7 @@ describe('JWK', () => {
           privateKey.alg as any,
           utf8Encoder.encode(encodedPayload)
         )
-        const signature = encodeSignaturePart(signaturePart)
+        const signature = base64UrlEncode(signaturePart, false)
         return `${encodedPayload}.${signature}`
       }
       const credential = await jwtSignWithoutHeader(
@@ -325,9 +323,7 @@ describe('JWK', () => {
 
     it('Should not authorize a token with missing "kid" in header', async () => {
       const encodeJwtPart = (part: unknown): string =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
-      const encodeSignaturePart = (buf: ArrayBufferLike): string =>
-        encodeBase64Url(buf).replace(/=/g, '')
+        base64UrlEncode(utf8Encoder.encode(JSON.stringify(part)).buffer, false)
       const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
         const encodedPayload = encodeJwtPart(payload)
         const encodedHeader = encodeJwtPart({ alg: privateKey.alg, typ: 'JWT' })
@@ -338,7 +334,7 @@ describe('JWK', () => {
           privateKey.alg as any,
           utf8Encoder.encode(partialToken)
         )
-        const signature = encodeSignaturePart(signaturePart)
+        const signature = base64UrlEncode(signaturePart, false)
         return `${partialToken}.${signature}`
       }
       const credential = await jwtSignWithoutKid(
@@ -1038,7 +1034,7 @@ describe('JWK', () => {
       // Create JWT with ES256
       const header = { alg: 'ES256', typ: 'JWT', kid }
       const encode = (obj: object) =>
-        encodeBase64Url(utf8Encoder.encode(JSON.stringify(obj)).buffer)
+        base64UrlEncode(utf8Encoder.encode(JSON.stringify(obj)).buffer)
       const encodedHeader = encode(header)
       const encodedPayload = encode(payload)
       const signingInput = `${encodedHeader}.${encodedPayload}`
@@ -1048,7 +1044,7 @@ describe('JWK', () => {
         'ES256',
         utf8Encoder.encode(signingInput)
       )
-      const signature = encodeBase64Url(signatureBuffer)
+      const signature = base64UrlEncode(signatureBuffer)
 
       const token = `${encodedHeader}.${encodedPayload}.${signature}`
 

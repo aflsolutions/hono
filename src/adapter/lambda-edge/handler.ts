@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { Hono } from '../../hono'
-import { decodeBase64, encodeBase64 } from '../../utils/encode'
+import { base64Decode, base64Encode } from '../../utils/encode'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -169,7 +169,7 @@ const createResult = async (res: Response): Promise<CloudFrontResult> => {
   const isBase64Encoded =
     isContentTypeBinary(res.headers.get('content-type') || '') ||
     (!!contentEncoding && !/^identity$/i.test(contentEncoding))
-  const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+  const body = isBase64Encoded ? base64Encode(await res.arrayBuffer()) : await res.text()
 
   return {
     status: res.status.toString(),
@@ -244,7 +244,7 @@ export const createBody = (
     return undefined
   }
   if (requestBody.encoding === 'base64') {
-    return decodeBase64(requestBody.data)
+    return base64Decode(requestBody.data)
   }
   return requestBody.data
 }

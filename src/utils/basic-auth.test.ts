@@ -1,6 +1,21 @@
 import { auth } from './basic-auth'
 
 describe('auth', () => {
+  it.each([
+    [' ', true],
+    ['   ', true],
+    ['\t', false],
+    [' \t', false],
+    ['\u00a0', false],
+  ])('preserves the Basic separator rules for %j', (separator, valid) => {
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: `bAsIc${separator}${btoa('username:pass:word')}` },
+      })
+    )
+    expect(res).toEqual(valid ? { username: 'username', password: 'pass:word' } : undefined)
+  })
+
   it('auth() - not include Authorization Header', () => {
     const res = auth(new Request('http://localhost/auth'))
     expect(res).toBeUndefined()

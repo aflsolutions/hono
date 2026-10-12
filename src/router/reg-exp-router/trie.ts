@@ -1,4 +1,4 @@
-import { createNullObject } from '../utils'
+import { nullRecord } from '../utils'
 import type { Context, ParamAssocArray } from './node'
 import { Node } from './node'
 
@@ -9,7 +9,7 @@ export class Trie {
   #root: Node = new Node()
   #index: number = 0
   // dynamic path -> [handler index, param assoc]; static paths are not registered
-  paths: Record<string, [number, ParamAssocArray]> = createNullObject()
+  paths = nullRecord<[number, ParamAssocArray]>()
 
   insert(path: string, isStatic: boolean): void {
     if (isStatic) {

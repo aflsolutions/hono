@@ -2,7 +2,7 @@ import { describe } from 'vitest'
 import { setCookie } from '../../helper/cookie'
 import { Hono } from '../../hono'
 import { bodyLimit } from '../../middleware/body-limit'
-import { decodeBase64, encodeBase64 } from '../../utils/encode'
+import { base64Decode, base64Encode } from '../../utils/encode'
 import type { Callback, CloudFrontEdgeEvent, CloudFrontRequest } from './handler'
 import { createBody, handle, isContentTypeBinary } from './handler'
 
@@ -41,7 +41,7 @@ describe('createBody', () => {
     const data = encoder.encode('test')
     const body = {
       action: 'read-only',
-      data: encodeBase64(data.buffer),
+      data: base64Encode(data.buffer),
       encoding: 'base64',
       inputTruncated: false,
     }
@@ -331,13 +331,13 @@ describe('handle', () => {
     })
     const handler = handle(app)
 
-    const body = encodeBase64(gzipped)
+    const body = base64Encode(gzipped)
     const res = await handler(cloudFrontEdgeEvent)
 
     expect(res).toMatchObject({ bodyEncoding: 'base64', body })
 
     const decompressed = await new Response(
-      new Blob([decodeBase64(body)]).stream().pipeThrough(new DecompressionStream('gzip'))
+      new Blob([base64Decode(body)]).stream().pipeThrough(new DecompressionStream('gzip'))
     ).text()
     expect(decompressed).toBe('a'.repeat(100))
   })
@@ -357,7 +357,7 @@ describe('handle', () => {
 
     expect(res).toMatchObject({
       bodyEncoding: 'base64',
-      body: encodeBase64(new TextEncoder().encode('zstd bytes').buffer),
+      body: base64Encode(new TextEncoder().encode('zstd bytes').buffer),
     })
   })
 

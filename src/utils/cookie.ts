@@ -3,6 +3,7 @@
  * Cookie utility.
  */
 
+import { base64Decode, base64Encode } from './encode'
 import { tryDecodeURIComponent } from './url'
 
 export type Cookie = Record<string, string>
@@ -45,7 +46,7 @@ const makeSignature = async (value: string, secret: string | BufferSource): Prom
   const key = await getCryptoKey(secret)
   const signature = await crypto.subtle.sign(algorithm.name, key, new TextEncoder().encode(value))
   // the returned base64 encoded signature will always be 44 characters long and end with one or two equal signs
-  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+  return base64Encode(signature)
 }
 
 const verifySignature = async (
@@ -54,11 +55,7 @@ const verifySignature = async (
   secret: CryptoKey
 ): Promise<boolean> => {
   try {
-    const signatureBinStr = atob(base64Signature)
-    const signature = new Uint8Array(signatureBinStr.length)
-    for (let i = 0, len = signatureBinStr.length; i < len; i++) {
-      signature[i] = signatureBinStr.charCodeAt(i)
-    }
+    const signature = base64Decode(base64Signature)
     return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
   } catch {
     return false

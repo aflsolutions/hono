@@ -71,17 +71,35 @@ describe('JWT', () => {
       expect(handlerExecuted).toBeTruthy()
     })
 
-    it('Should authorize with mixed-case Bearer scheme', async () => {
-      const credential =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+    it.each([' ', '   ', '\t', ' \t', '\u00a0'])(
+      'Should authorize with mixed-case Bearer scheme and separator %j',
+      async (separator) => {
+        const credential =
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
 
-      const req = new Request('http://localhost/auth-unicode/a')
-      req.headers.set('Authorization', `bEaReR ${credential}`)
-      const res = await app.request(req)
-      expect(res).not.toBeNull()
-      expect(res.status).toBe(200)
-      expect(await res.json()).toEqual({ message: 'hello world' })
-      expect(handlerExecuted).toBeTruthy()
+        const req = new Request('http://localhost/auth-unicode/a')
+        req.headers.set('Authorization', `bEaReR${separator}${credential}`)
+        const res = await app.request(req)
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ message: 'hello world' })
+        expect(handlerExecuted).toBeTruthy()
+      }
+    )
+
+    it.each([
+      ['Bearer invalid:token', 'invalid_token', 'token verification failure'],
+      ['Bearer token\u00a0', 'invalid_request', 'invalid credentials structure'],
+      ['Bearer \u00a0', 'invalid_request', 'no authorization included in request'],
+    ])('Should preserve the error response for %j', async (header, error, description) => {
+      const url = 'http://localhost/auth/a'
+      const res = await app.request(url, { headers: { Authorization: header } })
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(res.headers.get('www-authenticate')).toBe(
+        `Bearer realm="${url}",error="${error}",error_description="${description}"`
+      )
+      expect(handlerExecuted).toBeFalsy()
     })
 
     it('Should not authorize with non-Bearer scheme', async () => {

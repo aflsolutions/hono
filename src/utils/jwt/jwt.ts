@@ -4,7 +4,7 @@
  * https://datatracker.ietf.org/doc/html/rfc7519
  */
 
-import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
+import { base64UrlDecode, base64UrlEncode } from '../../utils/encode'
 import { AlgorithmTypes } from './jwa'
 import type { AsymmetricAlgorithm, SignatureAlgorithm, SymmetricAlgorithm } from './jwa'
 import { signing, verifying } from './jws'
@@ -29,11 +29,10 @@ import type { JWTPayload } from './types'
 import { utf8Decoder, utf8Encoder } from './utf8'
 
 const encodeJwtPart = (part: unknown): string =>
-  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
-const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
+  base64UrlEncode(utf8Encoder.encode(JSON.stringify(part)).buffer, false)
 
 const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
-  JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
+  JSON.parse(utf8Decoder.decode(base64UrlDecode(part)))
 
 export interface TokenHeader {
   alg: SignatureAlgorithm
@@ -70,7 +69,7 @@ export const sign = async (
   const partialToken = `${encodedHeader}.${encodedPayload}`
 
   const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken))
-  const signature = encodeSignaturePart(signaturePart)
+  const signature = base64UrlEncode(signaturePart, false)
 
   return `${partialToken}.${signature}`
 }
@@ -176,7 +175,7 @@ export const verify = async (
   const headerPayload = token.substring(0, token.lastIndexOf('.'))
   let signature: Uint8Array<ArrayBuffer>
   try {
-    signature = decodeBase64Url(tokenParts[2])
+    signature = base64UrlDecode(tokenParts[2])
   } catch {
     throw new JwtTokenInvalid(token)
   }
