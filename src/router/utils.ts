@@ -1,1 +1,1 @@
-export const createNullObject = () => Object.create(null)
+export const nullRecord = <T>(): Record<string, T> => Object.create(null)

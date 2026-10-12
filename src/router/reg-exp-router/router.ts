@@ -5,7 +5,7 @@ import {
   UnsupportedPathError,
 } from '../../router'
 import { checkOptionalParameter } from '../../utils/url'
-import { createNullObject } from '../utils'
+import { nullRecord } from '../utils'
 import type { HandlerData, StaticMap, Matcher, MatcherMap } from './matcher'
 import { match, emptyParam } from './matcher'
 import {
@@ -18,7 +18,7 @@ import { Trie } from './trie'
 
 type HandlerWithMetadata<T> = [T, string] // [handler, path]
 
-let wildcardRegExpCache: Record<string, RegExp> = createNullObject()
+let wildcardRegExpCache = nullRecord<RegExp>()
 function buildWildcardRegExp(path: string): RegExp {
   return (wildcardRegExpCache[path] ??= new RegExp(
     `^${path.replace(
@@ -52,8 +52,8 @@ export class RegExpRouter<T> implements Router<T> {
   #tries?: Record<string, Trie>
 
   constructor() {
-    this.#middleware = { [METHOD_NAME_ALL]: createNullObject() }
-    this.#routes = { [METHOD_NAME_ALL]: createNullObject() }
+    this.#middleware = { [METHOD_NAME_ALL]: nullRecord<HandlerWithMetadata<T>[]>() }
+    this.#routes = { [METHOD_NAME_ALL]: nullRecord<HandlerWithMetadata<T>[]>() }
     this.#tries = { [METHOD_NAME_ALL]: new Trie() }
   }
 
@@ -76,7 +76,7 @@ export class RegExpRouter<T> implements Router<T> {
     if (!middleware[method]) {
       this.#tries![method] = new Trie()
       for (const handlerMap of [middleware, routes]) {
-        handlerMap[method] = createNullObject()
+        handlerMap[method] = nullRecord<HandlerWithMetadata<T>[]>()
         for (const p in handlerMap[METHOD_NAME_ALL]) {
           handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]]
           this.#insertPath(method, p)
@@ -129,7 +129,7 @@ export class RegExpRouter<T> implements Router<T> {
   match: typeof match<Router<T>, T> = match
 
   protected buildAllMatchers(): MatcherMap<T> {
-    const matchers: MatcherMap<T> = createNullObject()
+    const matchers: MatcherMap<T> = nullRecord()
 
     for (const method of Object.keys(this.#routes!)) {
       matchers[method] = this.#buildMatcher(method)
@@ -137,7 +137,7 @@ export class RegExpRouter<T> implements Router<T> {
 
     // Release cache
     this.#middleware = this.#routes = this.#tries = undefined
-    wildcardRegExpCache = createNullObject()
+    wildcardRegExpCache = nullRecord<RegExp>()
 
     return matchers
   }
@@ -147,7 +147,7 @@ export class RegExpRouter<T> implements Router<T> {
     const routes = this.#routes![method]
 
     const trie = this.#tries![method]
-    const staticMap: StaticMap<T> = createNullObject()
+    const staticMap: StaticMap<T> = nullRecord()
     const handlerData: HandlerData<T>[] = []
     const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp()
 
@@ -156,7 +156,7 @@ export class RegExpRouter<T> implements Router<T> {
         const handlers = r[path]
         const pathData = trie.paths[path]
         if (!pathData) {
-          staticMap[path] = [handlers.map(([h]) => [h, createNullObject()]), emptyParam]
+          staticMap[path] = [handlers.map(([h]) => [h, nullRecord<number>()]), emptyParam]
           continue
         }
         handlerData[pathData[0]] = handlers.map(([h, handlerPath]) => [
@@ -164,7 +164,7 @@ export class RegExpRouter<T> implements Router<T> {
           trie.paths[handlerPath][1].reduceRight((map, [key], i) => {
             map[key] = paramReplacementMap[pathData[1][i][1]]
             return map
-          }, createNullObject()),
+          }, nullRecord<number>()),
         ])
       }
     }

@@ -1,4 +1,4 @@
-import { createNullObject } from '../utils'
+import { nullRecord } from '../utils'
 
 export const LABEL_REG_EXP_STR = '[^/]+'
 export const ONLY_WILDCARD_REG_EXP_STR = '.*'
@@ -48,7 +48,7 @@ export class Node {
   // handler index of a dynamic path, or -1 for a static path terminal
   #index?: number
   #varIndex?: number
-  #children: Record<string, Node> = createNullObject()
+  #children = nullRecord<Node>()
 
   insert(
     tokens: readonly string[],
