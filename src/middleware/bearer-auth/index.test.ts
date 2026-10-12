@@ -464,6 +464,24 @@ describe('Bearer Auth by Middleware', () => {
     }
   )
 
+  it.each([
+    [' ', 200],
+    ['   ', 200],
+    [' \t', 200],
+    ['\t', 400],
+    ['\u00a0', 400],
+  ])('Should preserve separator rules for %j', async (separator, status) => {
+    const res = await app.request('http://localhost/auth/a', {
+      headers: { Authorization: `Bearer${separator}${token}` },
+    })
+    expect(res.status).toBe(status)
+    expect(handlerExecuted).toBe(status === 200)
+    if (status === 400) {
+      expect(await res.text()).toBe('Bad Request')
+      expect(res.headers.get('www-authenticate')).toBe('Bearer error="invalid_request"')
+    }
+  })
+
   it('Should not authorize - no authorization header', async () => {
     const req = new Request('http://localhost/auth/a')
     const res = await app.request(req)
@@ -942,19 +960,22 @@ describe('Bearer Auth with prefix containing regex metacharacters', () => {
     }).not.toThrow()
   })
 
-  it('Should authorize with prefix containing parentheses', async () => {
-    app.use('/*', bearerAuth({ token, prefix: 'Bearer(v2)' }))
-    app.get('/*', (c) => {
-      handlerExecuted = true
-      return c.text('ok')
-    })
+  it.each(['Bearer(v2)', 'Bearer (v2)'])(
+    'Should authorize with prefix containing parentheses: %s',
+    async (prefix) => {
+      app.use('/*', bearerAuth({ token, prefix }))
+      app.get('/*', (c) => {
+        handlerExecuted = true
+        return c.text('ok')
+      })
 
-    const req = new Request('http://localhost/')
-    req.headers.set('Authorization', `Bearer(v2) ${token}`)
-    const res = await app.request(req)
-    expect(res.status).toBe(200)
-    expect(handlerExecuted).toBeTruthy()
-  })
+      const req = new Request('http://localhost/')
+      req.headers.set('Authorization', `${prefix} ${token}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    }
+  )
 
   it('Should authorize with prefix containing dots and plus signs', async () => {
     app.use('/*', bearerAuth({ token, prefix: 'X.Auth+v2' }))

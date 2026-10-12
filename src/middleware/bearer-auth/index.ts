@@ -6,10 +6,10 @@
 import type { Context } from '../../context'
 import { HTTPException } from '../../http-exception'
 import type { Env, MiddlewareHandler } from '../../types'
+import { parseAuthorization, TOKEN68_REGEXP } from '../../utils/authorization'
 import { timingSafeEqual } from '../../utils/buffer'
 import type { ContentfulStatusCode } from '../../utils/http-status'
 
-const TOKEN_STRINGS = '[A-Za-z0-9._~+/-]+=*'
 const PREFIX = 'Bearer'
 const HEADER = 'Authorization'
 
@@ -116,7 +116,6 @@ export const bearerAuth = <E extends Env = Env>(
 
   const realm = options.realm?.replace(/"/g, '\\"')
   const prefix = options.prefix
-  const tokenRegexp = new RegExp(`^${TOKEN_STRINGS}$`)
   const wwwAuthenticatePrefix = prefix === '' ? '' : `${prefix} `
 
   const throwHTTPException = async (
@@ -167,19 +166,9 @@ export const bearerAuth = <E extends Env = Env>(
           'Unauthorized'
       )
     } else {
-      let tokenValue: string | undefined
+      const tokenValue = parseAuthorization(headerToken, { prefix, separator: / \s*/ })?.credentials
 
-      if (prefix === '') {
-        tokenValue = headerToken
-      } else {
-        const headerLower = headerToken.toLowerCase()
-        const prefixLower = prefix.toLowerCase()
-        if (headerLower.startsWith(prefixLower) && headerToken[prefix.length] === ' ') {
-          tokenValue = headerToken.slice(prefix.length).trimStart()
-        }
-      }
-
-      if (!tokenValue || !tokenRegexp.test(tokenValue)) {
+      if (!tokenValue || !TOKEN68_REGEXP.test(tokenValue)) {
         // Invalid Request
         await throwHTTPException(
           c,

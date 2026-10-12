@@ -7,6 +7,7 @@ import type { Context } from '../../context'
 import { getCookie, getSignedCookie } from '../../helper/cookie'
 import { HTTPException } from '../../http-exception'
 import type { MiddlewareHandler } from '../../types'
+import { parseAuthorization } from '../../utils/authorization'
 import type { CookiePrefixOptions } from '../../utils/cookie'
 import { Jwt } from '../../utils/jwt'
 import '../../context'
@@ -81,8 +82,12 @@ export const jwt = (options: {
     const credentials = ctx.req.raw.headers.get(headerName)
     let token
     if (credentials) {
-      const parts = credentials.split(/\s+/)
-      if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+      const authorization = parseAuthorization(credentials)
+      if (
+        !authorization ||
+        authorization.scheme.toLowerCase() !== 'bearer' ||
+        /\s/.test(authorization.credentials)
+      ) {
         const errDescription = 'invalid credentials structure'
         throw new HTTPException(401, {
           message: errDescription,
@@ -94,7 +99,7 @@ export const jwt = (options: {
           }),
         })
       } else {
-        token = parts[1]
+        token = authorization.credentials
       }
     } else if (options.cookie) {
       if (typeof options.cookie == 'string') {
